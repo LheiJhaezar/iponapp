@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import NavTabs from "@/components/NavTabs";
+import Link from "next/link";
 
 type FoodEntry = {
   id: string;
@@ -46,7 +47,10 @@ export default function FoodLogPage() {
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id ?? null;
     setUserId(uid);
-    if (!uid) { setLoading(false); return; }
+    if (!uid) {
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("food_entries")
       .select("*")
@@ -57,7 +61,9 @@ export default function FoodLogPage() {
     setLoading(false);
   }, [supabase]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function addToday() {
     if (!userId) return;
@@ -91,72 +97,107 @@ export default function FoodLogPage() {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-5 py-10">
-        <p className="text-inksoft">Loading food log...</p>
+        <p className="text-gray-500 text-sm font-medium">Loading food log...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-5 py-8">
-      <div className="flex items-baseline gap-2 mb-5">
-        <span className="font-display text-xl font-semibold">Ipon</span>
-        <span className="text-xs text-inksoft">your cutoff, tracked</span>
-      </div>
+    <div className="max-w-5xl mx-auto px-5 py-6">
+      {/* Top Header Navigation */}
       <NavTabs />
 
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="font-display text-2xl font-semibold">Food log</h1>
-        <button onClick={addToday} className="bg-jade text-paperraised font-semibold rounded-xl px-4 py-2 text-sm">
+      {/* Secondary Sub-Navigation Pills */}
+      <div className="flex gap-2 my-4">
+        <Link
+          href="/bills"
+          className="px-5 py-1.5 rounded-full bg-transparent text-gray-700 hover:text-gray-900 text-xs font-medium transition-colors"
+        >
+          Bills
+        </Link>
+        <Link
+          href="/food"
+          className="px-5 py-1.5 rounded-full bg-[#1b4332] text-white text-xs font-semibold shadow-sm"
+        >
+          Food log
+        </Link>
+      </div>
+
+      {/* Page Title & Add Button */}
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <h1 className="font-serif text-2xl font-bold text-gray-900">Food log</h1>
+          <p className="text-gray-500 text-xs mt-1">
+            Click any cell to edit. Nothing's required — leave a meal blank on days you skip it.
+          </p>
+        </div>
+        <button
+          onClick={addToday}
+          className="bg-[#1b4332] text-white font-semibold rounded-lg px-4 py-2 text-xs hover:bg-[#2d6a4f] transition-colors shadow-sm"
+        >
           + Add today
         </button>
       </div>
-      <p className="text-inksoft text-sm mb-5">
-        Click any cell to edit. Nothing's required — leave a meal blank on days you skip it.
-      </p>
 
+      {/* Empty State */}
       {entries.length === 0 && (
-        <div className="border border-dashed border-line rounded-card p-10 text-center">
-          <p className="text-inksoft text-sm mb-4">No food entries yet.</p>
-          <button onClick={addToday} className="bg-jade text-paperraised font-semibold rounded-xl px-5 py-2.5 text-sm">
+        <div className="border border-dashed border-gray-300 rounded-2xl p-10 text-center bg-white my-6">
+          <p className="text-gray-500 text-sm mb-4">No food entries yet.</p>
+          <button
+            onClick={addToday}
+            className="bg-[#1b4332] text-white font-semibold rounded-xl px-5 py-2.5 text-xs hover:bg-[#2d6a4f] transition-colors shadow-sm"
+          >
             Start today's log
           </button>
         </div>
       )}
 
+      {/* Editable Food Table */}
       {entries.length > 0 && (
-        <div className="overflow-x-auto border border-line rounded-card bg-paperraised">
+        <div className="mt-6 overflow-x-auto border border-gray-200 rounded-2xl bg-white shadow-sm">
           <table className="border-collapse w-full" style={{ minWidth: 820 }}>
             <thead>
-              <tr>
-                <th className="text-left text-xs font-bold text-jadedeep uppercase tracking-widest px-4 py-3 bg-sage whitespace-nowrap"
-                  style={{ minWidth: 96 }}>Date</th>
+              <tr className="bg-[#e8f5e9]/60 border-b border-gray-200">
+                <th
+                  className="text-left text-xs font-bold text-[#1b4332] uppercase tracking-wider px-4 py-3 whitespace-nowrap"
+                  style={{ minWidth: 100 }}
+                >
+                  Date
+                </th>
                 {MEALS.map((m) => (
-                  <th key={m.key}
-                    className="text-left text-xs font-bold text-jadedeep uppercase tracking-widest px-4 py-3 bg-sage whitespace-nowrap"
-                    style={{ minWidth: m.key === "extra" ? 170 : 130 }}>
+                  <th
+                    key={m.key}
+                    className="text-left text-xs font-bold text-[#1b4332] uppercase tracking-wider px-4 py-3 whitespace-nowrap"
+                    style={{ minWidth: m.key === "extra" ? 170 : 130 }}
+                  >
                     {m.label}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-200">
               {entries.map((entry) => (
-                <tr key={entry.id}>
-                  <td className="px-4 py-3 border-b border-r border-line bg-paper font-bold text-sm whitespace-nowrap align-top">
+                <tr key={entry.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-4 py-3 border-r border-gray-200 bg-gray-50/30 font-semibold text-sm text-gray-900 whitespace-nowrap align-top">
                     {formatDate(entry.log_date)}
-                    <span className="block text-xs text-inksoft font-normal mt-0.5">{formatDow(entry.log_date)}</span>
+                    <span className="block text-[11px] text-gray-400 font-normal mt-0.5">
+                      {formatDow(entry.log_date)}
+                    </span>
                   </td>
                   {MEALS.map((m) => (
-                    <td key={m.key} className="border-b border-r border-line last:border-r-0 align-top p-0">
+                    <td
+                      key={m.key}
+                      className="border-r border-gray-200 last:border-r-0 align-top p-0"
+                    >
                       <div
                         contentEditable
                         suppressContentEditableWarning
                         data-placeholder="—"
                         onBlur={(e) => updateCell(entry, m.key, e.currentTarget.textContent ?? "")}
-                        className={`px-3 py-3 text-sm outline-none min-h-[44px] focus:bg-sage focus:shadow-inner
-                          ${m.key === "extra" ? "text-inksoft italic text-xs" : ""}
+                        className={`px-3 py-3 text-sm outline-none min-h-[48px] focus:bg-[#e8f5e9]/40 transition-colors
+                          ${m.key === "extra" ? "text-gray-500 italic text-xs" : "text-gray-800"}
                           ${saving === entry.id + m.key ? "opacity-50" : ""}
-                          empty:before:content-[attr(data-placeholder)] empty:before:text-inksoft/40`}
+                          empty:before:content-[attr(data-placeholder)] empty:before:text-gray-300`}
                       >
                         {entry[m.key] ?? ""}
                       </div>
